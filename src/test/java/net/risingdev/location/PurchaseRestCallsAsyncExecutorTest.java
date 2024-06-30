@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.when;
 
 import net.risingdev.location.entities.Purchase;
@@ -49,6 +50,27 @@ public class PurchaseRestCallsAsyncExecutorTest {
 		assertEquals("User 1", purchases.get(0).getBuyerName());
 		assertEquals("Order 1", purchases.get(0).getOrderDescription());
 		assertEquals("Payment 1", purchases.get(0).getPaymentDescription());
+	}
+	
+	@Test
+	void handleExceptionsGracefully() {
+		
+		Purchase purchase = new Purchase("1", "1", "1");
+		
+		List<Purchase> purchases = new ArrayList<>(List.of(purchase));
+		
+		when(restTemplate.getForEntity(MOCK_BASE_URL.concat("/users/1"), String.class)).thenReturn(new ResponseEntity<>("User 1", HttpStatus.OK));
+		when(restTemplate.getForEntity(MOCK_BASE_URL.concat("/orders/1"), String.class)).thenReturn(new ResponseEntity<>("Order 1", HttpStatus.OK));
+		when(restTemplate.getForEntity(MOCK_BASE_URL.concat("/payments/1"), String.class)).thenThrow(IllegalArgumentException.class);
+		
+		subject.updatePurchaseHandlingExceptions(purchases.get(0));
+		
+		assertEquals("User 1", purchases.get(0).getBuyerName());
+		assertEquals("Order 1", purchases.get(0).getOrderDescription());
+		assertNull(purchases.get(0).getPaymentDescription());
+		
+		
+		
 	}
 	
 	
